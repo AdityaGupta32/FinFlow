@@ -1,41 +1,34 @@
 import os
-import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import re
+import uuid
+from datetime import datetime
+from fastapi import APIRouter, UploadFile, File, Form
+from supabase import create_client
+from dotenv import load_dotenv
+import pdfplumber
 
-# Import your individual logic files
-import Parser 
-import spending
+# Load environment variables
+load_dotenv()
 
-app = FastAPI()
-
-# Enable CORS for your React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://fin-flow-mauve.vercel.app" # Removed trailing slash for better matching
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# Initialize Supabase client
+supabase = create_client(
+    os.getenv("VITE_SUPABASE_URL"), 
+    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 )
 
-# Include routes from parser.py and spending.py
-app.include_router(Parser.app.router) 
-app.include_router(spending.router)
+# Create router instead of app
+app = APIRouter()
 
-@app.get("/")
-def health_check():
-    return {"status": "Finance.AI Backend Online"}
-
-if __name__ == "__main__":
-    # Render assigns a port via the PORT environment variable
-    # We default to 8000 only if running locally
-    port = int(os.environ.get("PORT", 8000))
-    
-    # host MUST be 0.0.0.0 to accept external traffic on Render
-    uvicorn.run(app, host="0.0.0.0", port=port)
+def clean_amount(amount_str: str) -> float:
+    """
+    Converts amount string like 'Rs. 1,234.56' or '+Rs. 500' to float.
+    """
+    # Remove Rs, currency symbols, spaces, and commas
+    cleaned = re.sub(r'[Rs\.,\s₹+]', '', amount_str)
+    try:
+        return float(cleaned)
+    except ValueError:
+        return 0.0
 
 def extract_category_dynamic(block_text: str) -> str:
     """
@@ -61,21 +54,25 @@ def extract_category_dynamic(block_text: str) -> str:
         
     return "Miscellaneous"
 
-# ---------------- UPLOAD ROUTE ----------------
-
 @app.post("/upload")
 async def upload_statement(
     file: UploadFile = File(...),
     user_id: str = Form(...)
 ):
+    """
+    Endpoint to upload and parse PDF bank statements.
+    Extracts transactions and stores them in Supabase.
+    """
     temp_file = f"temp_{uuid.uuid4().hex}.pdf"
     transactions = []
 
     try:
+        # Save uploaded file temporarily
         contents = await file.read()
         with open(temp_file, "wb") as f:
             f.write(contents)
 
+        # Extract text from PDF
         full_text = ""
         with pdfplumber.open(temp_file) as pdf:
             for page in pdf.pages:
@@ -84,7 +81,6 @@ async def upload_statement(
                     full_text += text + "\n"
 
         # Split into blocks starting with a Date (e.g., "16 Dec" or "Dec 16")
-        # Handles cases where the year isn't explicitly on the same line
         lines = full_text.split('\n')
         current_block = []
         transaction_blocks = []
@@ -98,13 +94,14 @@ async def upload_statement(
             else:
                 current_block.append(line)
         
+        # Don't forget the last block
         if current_block:
             transaction_blocks.append('\n'.join(current_block))
 
+        # Process each transaction block
         for block in transaction_blocks:
             # 1. Extract Merchant Name
             # Pattern: Captures everything after "Paid to/Received from" 
-            # Stops at "Tag:", "UPI ID:", "#", or multiple spaces
             name_pattern = r'(?:Paid to|Received from|Money sent to|Payment to|Automatic payment for)\s+(.*?)(?=\s{2,}|Tag:|UPI ID:|#|\n|$)'
             name_match = re.search(name_pattern, block, re.IGNORECASE | re.DOTALL)
             
@@ -130,14 +127,16 @@ async def upload_statement(
                 continue
             
             date_str = date_match.group(1).strip()
-            # Dynamic year assignment based on the current context [cite: 4, 14]
-            year = "2025" if "Dec" in date_str and "16" in date_str else "2024" 
+            # Dynamic year assignment - adjust this logic based on your needs
+            # This assumes Dec transactions are from 2024, others from 2025
+            year = "2024" if "Dec" in date_str else "2025"
             
             try:
                 transaction_date = datetime.strptime(f"{date_str} {year}", "%d %b %Y").date().isoformat()
             except ValueError:
                 continue
 
+            # Build transaction object
             transactions.append({
                 "user_id": user_id,
                 "date": transaction_date,
@@ -146,14 +145,28 @@ async def upload_statement(
                 "category": category
             })
 
+        # Insert transactions into Supabase
         if transactions:
             supabase.table("transactions").insert(transactions).execute()
-            return {"status": "success", "count": len(transactions)}
+            return {
+                "status": "success", 
+                "count": len(transactions),
+                "message": f"Successfully parsed {len(transactions)} transactions"
+            }
 
-        return {"status": "error", "message": "No valid transactions found."}
+        return {
+            "status": "error", 
+            "message": "No valid transactions found in the PDF"
+        }
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        print(f"Error processing PDF: {e}")
+        return {
+            "status": "error", 
+            "message": f"Failed to process PDF: {str(e)}"
+        }
+    
     finally:
+        # Clean up temporary file
         if os.path.exists(temp_file):
             os.remove(temp_file)
