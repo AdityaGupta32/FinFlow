@@ -1,0 +1,43 @@
+/* --- Global Section Transitions --- */
+section {
+    transition: opacity 0.8s ease-in-out, transform 0.8s ease-out;
+  }
+  
+  /* --- Hero Section Background Glow --- */
+  .hero-neural-glow {
+    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    pointer-events: none;
+  }
+  
+  /* --- ML Prediction Card Animation --- */
+  @keyframes prediction-glow {
+    0% { box-shadow: 0 0 5px rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.2); }
+    50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.3); border-color: rgba(56, 189, 248, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.2); }
+  }
+  
+  .prediction-card-active {
+    animation: prediction-glow 4s infinite ease-in-out;
+  }
+  
+  /* --- Dashboard Grid Polishing --- */
+  .dashboard-grid-entry {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .dashboard-grid-entry:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+    transform: translateY(-2px);
+  }
+  
+  /* --- Selection Highlighting --- */
+  ::selection {
+    background-color: var(--color-fintech-accent);
+    color: var(--color-fintech-primary);
+  }
+  
+  /* Smooth Scrolling for the Pipeline Links */
+  html {
+    scroll-behavior: smooth;
+  }

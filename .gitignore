@@ -1,0 +1,24 @@
+# --- General ---
+.env
+.env.local
+.env.*.local
+.DS_Store
+
+# --- Frontend (Node/Vite) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# --- Backend (Python) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# --- Large Files ---
+# Since your .pkl is 230MB, we ignore it here 
+# UNLESS you are using Git LFS as we discussed.
+spending_model.pkl

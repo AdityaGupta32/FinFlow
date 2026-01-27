@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  /* High-Contrast Fintech Identity */
+  --color-fintech-primary: #020617;   /* Ultra Dark Slate for deep contrast */
+  --color-fintech-card: #0F172A;      /* Slate 900 for component backgrounds */
+  --color-fintech-accent: #38BDF8;    /* Sky 400 for primary actions and brand color */
+  --color-fintech-success: #10B981;   /* Emerald 500 for income and safe status */
+  --color-fintech-danger: #EF4444;    /* Red 500 for expenses and risk alerts */
+}
+@layer components {
+  /* Dynamic Background Neural Glow */
+  .neural-bg-glow {
+    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+    filter: blur(80px);
+    pointer-events: none;
+    position: absolute;
+    z-index: 0;
+  }
+
+  /* Moving Grid for the "Pipeline" feel */
+  .moving-grid {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    mask-image: radial-gradient(circle at center, black, transparent 80%);
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-fintech-primary);
+    color: #e2e8f0; /* Slate 200 */
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar for the Transaction Vector Feed */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fintech-accent);
+}
+
+/* Glassmorphism Panel Utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
