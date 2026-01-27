@@ -5,7 +5,7 @@ google-genai
 python-dotenv
 pandas
 numpy
-scikit-learn
+scikit-learn==1.7.2
 joblib
 pdfplumber
 supabase
