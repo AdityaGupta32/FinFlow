@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from google import genai 
+import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -28,7 +28,7 @@ INSIGHT_TEMPLATES = {
 def generate_gemini_insights(monthly_income, transactions, emi, interest_rate, job_title, education):
     """Refined AI logic with correct model version and 3-month normalization"""
     try:
-        client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+        genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
         
         # --- STEP 1: BLACKLIST FILTERING ---
         blacklist = ["Aakansha Lallan Gupta", "Cash", "Self", "Transfer", "BANARSHI"]
