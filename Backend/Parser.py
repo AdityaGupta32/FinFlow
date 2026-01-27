@@ -3,7 +3,7 @@ import re
 import uuid
 import uvicorn
 from datetime import datetime
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client
 from dotenv import load_dotenv
@@ -12,22 +12,27 @@ import pdfplumber
 # Load environment variables
 load_dotenv()
 
-# Initialize FastAPI app (Standalone)
+# 1. Initialize FastAPI app (Standalone)
 app = FastAPI(title="Finance Parser Service")
 
-# Add CORS so your React frontend can talk to it directly if needed
+# 2. Add CORS so your React frontend can talk to it directly
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # In production, replace with your Vercel URL
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize Supabase client
+# 3. Initialize Supabase client
+# Ensure these variables are set in your Railway 'Variables' tab
 supabase = create_client(
     os.getenv("VITE_SUPABASE_URL"), 
     os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 )
+
+# 4. Define an APIRouter (Optional but good for modularity)
+router = APIRouter()
 
 def clean_amount(amount_str: str) -> float:
     """ Converts amount string like 'Rs. 1,234.56' or '+Rs. 500' to float. """
@@ -55,7 +60,7 @@ def extract_category_dynamic(block_text: str) -> str:
         
     return "Miscellaneous"
 
-@app.post("/upload")
+@router.post("/upload")
 async def upload_statement(
     file: UploadFile = File(...),
     user_id: str = Form(...)
@@ -154,10 +159,18 @@ async def upload_statement(
         }
     
     finally:
+        # Clean up temporary file
         if os.path.exists(temp_file):
             os.remove(temp_file)
 
-# For local testing or specific Railway start command
+# Include the router in the app
+app.include_router(router)
+
+@app.get("/")
+def health_check():
+    return {"status": "Parser Service is Live"}
+
+# For Railway Deployment
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
