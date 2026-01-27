@@ -18,7 +18,10 @@ app = FastAPI(title="Finance.AI Spending ML Service")
 # 3. Add CORS (Essential for cross-service communication)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://fin-flow-mauve.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
