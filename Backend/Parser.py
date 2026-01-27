@@ -1,39 +1,41 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
-import pdfplumber
-import re
 import os
-import uuid
-from datetime import datetime
-from supabase import create_client
-from dotenv import load_dotenv
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# ---------------- CONFIG ----------------
-load_dotenv(".env")
-
-SUPABASE_URL = os.getenv("VITE_SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+# Import your individual logic files
+import Parser 
+import spending
 
 app = FastAPI()
+
+# Enable CORS for your React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173",
-                   "https://fin-flow-mauve.vercel.app/"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://fin-flow-mauve.vercel.app" # Removed trailing slash for better matching
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------------- HELPER FUNCTIONS ----------------
+# Include routes from parser.py and spending.py
+app.include_router(Parser.app.router) 
+app.include_router(spending.router)
 
-def clean_amount(text: str) -> float:
-    """Extracts numeric value from strings like '- Rs.50' """
-    match = re.search(r'Rs\.?\s*([\d,]+\.?\d*)', text)
-    if not match:
-        return 0.0
-    val = float(match.group(1).replace(",", ""))
-    return -val if "-" in text else val
+@app.get("/")
+def health_check():
+    return {"status": "Finance.AI Backend Online"}
+
+if __name__ == "__main__":
+    # Render assigns a port via the PORT environment variable
+    # We default to 8000 only if running locally
+    port = int(os.environ.get("PORT", 8000))
+    
+    # host MUST be 0.0.0.0 to accept external traffic on Render
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 def extract_category_dynamic(block_text: str) -> str:
     """
