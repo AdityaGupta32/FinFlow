@@ -7,9 +7,17 @@ from dotenv import load_dotenv
 from datetime import datetime
 from insights import generate_spending_insights 
 
-load_dotenv(".env")
+load_dotenv()  # Changed from load_dotenv(".env") to load_dotenv()
+
+# Validate environment variables before creating client
+supabase_url = os.getenv("VITE_SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+if not supabase_url or not supabase_key:
+    raise ValueError("Missing Supabase environment variables")
+
 # Use lowercase 'supabase' to match the variable name used in the rest of your code
-supabase = create_client(os.getenv("VITE_SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
+supabase = create_client(supabase_url, supabase_key)
 
 # Load the updated 10-feature model
 try:
