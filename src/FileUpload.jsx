@@ -23,7 +23,7 @@ const FileUpload = ({ user_id, onUploadSuccess }) => {
 
     try {
       // POST request to the local FastAPI upload endpoint
-      const response = await axios.post("http://localhost:8000/upload", formData, {
+      const response = await axios.post("https://fintech-backend-gufe.onrender.com/upload", formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
