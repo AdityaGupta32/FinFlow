@@ -3,6 +3,9 @@ uvicorn
 python-multipart
 google-genai
 python-dotenv
+Parser or spending files use, such as:
+pandas
+google-generativeai
 pandas
 numpy
 scikit-learn==1.7.2
