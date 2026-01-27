@@ -10,6 +10,6 @@ joblib
 pdfplumber
 uvicorn
 gunicorn
-
+python-multipart
 supabase
 requests
