@@ -1,8 +1,10 @@
 import os
 import re
 import uuid
+import uvicorn
 from datetime import datetime
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client
 from dotenv import load_dotenv
 import pdfplumber
@@ -10,20 +12,25 @@ import pdfplumber
 # Load environment variables
 load_dotenv()
 
+# Initialize FastAPI app (Standalone)
+app = FastAPI(title="Finance Parser Service")
+
+# Add CORS so your React frontend can talk to it directly if needed
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Initialize Supabase client
 supabase = create_client(
     os.getenv("VITE_SUPABASE_URL"), 
     os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 )
 
-# Create router instead of app
-app = APIRouter()
-
 def clean_amount(amount_str: str) -> float:
-    """
-    Converts amount string like 'Rs. 1,234.56' or '+Rs. 500' to float.
-    """
-    # Remove Rs, currency symbols, spaces, and commas
+    """ Converts amount string like 'Rs. 1,234.56' or '+Rs. 500' to float. """
     cleaned = re.sub(r'[Rs\.,\s₹+]', '', amount_str)
     try:
         return float(cleaned)
@@ -31,19 +38,13 @@ def clean_amount(amount_str: str) -> float:
         return 0.0
 
 def extract_category_dynamic(block_text: str) -> str:
-    """
-    Dynamically extracts category by looking for the hashtag symbol.
-    In Paytm statements, categories are preceded by # (e.g., #Food, #Medical).
-    """
-    # Look for # followed by letters, allowing for spaces like "# Bill Payments"
+    """ Dynamically extracts category by looking for the hashtag symbol. """
     tag_match = re.search(r'#\s*([A-Za-z]+(?:\s+[A-Za-z]+)*)', block_text)
     
     if tag_match:
         category = tag_match.group(1).strip()
-        # Clean up common variations to keep database consistent
         category = ' '.join(word.capitalize() for word in category.split())
         
-        # Mapping specific statement tags to standard categories
         tag_map = {
             "Medical": "Healthcare",
             "Transfers": "Money Transfer",
@@ -80,13 +81,12 @@ async def upload_statement(
                 if text:
                     full_text += text + "\n"
 
-        # Split into blocks starting with a Date (e.g., "16 Dec" or "Dec 16")
+        # Split into blocks starting with a Date
         lines = full_text.split('\n')
         current_block = []
         transaction_blocks = []
         
         for line in lines:
-            # Matches "16 Dec" or "Dec 16"
             if re.match(r'^(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2})', line):
                 if current_block:
                     transaction_blocks.append('\n'.join(current_block))
@@ -94,14 +94,11 @@ async def upload_statement(
             else:
                 current_block.append(line)
         
-        # Don't forget the last block
         if current_block:
             transaction_blocks.append('\n'.join(current_block))
 
         # Process each transaction block
         for block in transaction_blocks:
-            # 1. Extract Merchant Name
-            # Pattern: Captures everything after "Paid to/Received from" 
             name_pattern = r'(?:Paid to|Received from|Money sent to|Payment to|Automatic payment for)\s+(.*?)(?=\s{2,}|Tag:|UPI ID:|#|\n|$)'
             name_match = re.search(name_pattern, block, re.IGNORECASE | re.DOTALL)
             
@@ -109,26 +106,19 @@ async def upload_statement(
                 continue
             
             description = name_match.group(1).strip()
-            # Clean up merchant name if it caught extra newlines
             description = description.split('\n')[0].strip()
-
-            # 2. Extract Category Dynamically
             category = extract_category_dynamic(block)
 
-            # 3. Extract Amount
             amount_match = re.search(r'[+-]?\s*Rs\.?\s*([\d,]+\.?\d*)', block)
             if not amount_match:
                 continue
             amount_value = clean_amount(amount_match.group(0))
 
-            # 4. Extract Date
             date_match = re.search(r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))', block)
             if not date_match:
                 continue
             
             date_str = date_match.group(1).strip()
-            # Dynamic year assignment - adjust this logic based on your needs
-            # This assumes Dec transactions are from 2024, others from 2025
             year = "2024" if "Dec" in date_str else "2025"
             
             try:
@@ -136,7 +126,6 @@ async def upload_statement(
             except ValueError:
                 continue
 
-            # Build transaction object
             transactions.append({
                 "user_id": user_id,
                 "date": transaction_date,
@@ -145,7 +134,6 @@ async def upload_statement(
                 "category": category
             })
 
-        # Insert transactions into Supabase
         if transactions:
             supabase.table("transactions").insert(transactions).execute()
             return {
@@ -160,13 +148,16 @@ async def upload_statement(
         }
 
     except Exception as e:
-        print(f"Error processing PDF: {e}")
         return {
             "status": "error", 
             "message": f"Failed to process PDF: {str(e)}"
         }
     
     finally:
-        # Clean up temporary file
         if os.path.exists(temp_file):
             os.remove(temp_file)
+
+# For local testing or specific Railway start command
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
