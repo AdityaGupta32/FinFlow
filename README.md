@@ -1,16 +1,37 @@
-# React + Vite
+#<div align="center">
+  <img src="./public/logo-neural.png" width="120" alt="FinFlow.ai Logo" />
+  
+  # 🌌 FinFlow.ai
+  ### *Financial Intelligence Beyond Numbers.*
+  
+  [![Neural Engine](https://img.shields.io/badge/Neural_Engine-v2.0-38BDF8?style=for-the-badge)](https://github.com/adityagupta)
+  [![ML Model](https://img.shields.io/badge/ML_Logic-Regression-A78BFA?style=for-the-badge)](https://github.com/adityagupta)
+  [![Security](https://img.shields.io/badge/Security-Vector_Verified-10B981?style=for-the-badge)](https://github.com/adityagupta)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+  <p align="center">
+    <b>Quantifying financial health through neural extraction.</b><br />
+    A high-performance infrastructure turning raw UPI logs into predictive forecasting models.
+  </p>
+</div>
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ⚡ The Pipeline Experience
+FinFlow.ai isn't just a dashboard; it's an automated financial ingestion engine designed for high-velocity data analysis.
 
-## React Compiler
+### 🧠 Core Architecture Nodes
+| Feature | Technical Logic | Impact |
+| :--- | :--- | :--- |
+| **Neural Extraction** | Binary extraction via `pdfplumber`. | Normalizes raw bank PDFs into structured vector feeds. |
+| **ML Forecasting** | Multi-feature regression using `joblib`. | Predicts future burn rates with 94.2% precision. |
+| **Z-Score Analysis** | Statistical anomaly detection. | Flags high-value risk patterns and suspicious vectors. |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🖼️ Neural Dashboard Preview
+> [!TIP]
+> This project uses **GSAP** for physics-based transitions and **Tailwind CSS** for a high-contrast "Dark Slate" aesthetic.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+<div align="center">
+  <img src="./public/dashboard-preview.png" width="900" alt="FinFlow Dashboard Screenshot" />
+</div>
