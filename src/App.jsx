@@ -103,7 +103,7 @@ function App() {
     try {
       const { data: txData } = await supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
       const { data: mlData } = await supabase.from('spending_results').select('*').eq('user_id', userId).order('calculation_date', { ascending: false }).limit(1).maybeSingle();
-
+  
       setTransactionData(txData || []);
       if (mlData) {
         setPredictionData({
@@ -112,7 +112,10 @@ function App() {
           suggestion: mlData.suggestion
         });
       }
-      if ((txData && txData.length > 0) || mlData) setView('dashboard');
+  
+      // FIX: If there is a user, ALWAYS show dashboard view so they can see the "Add Statement" button
+      setView('dashboard'); 
+      
     } catch (error) {
       console.error("Supabase Error:", error.message);
     } finally {
@@ -142,7 +145,7 @@ function App() {
         user={user} 
         onSignOut={async () => await supabase.auth.signOut()}
         onHomeClick={() => setView('landing')}
-        onDashboardClick={() => { if (transactionData.length > 0 || predictionData) setView('dashboard'); }}
+        onDashboardClick={() => { if (user) setView('dashboard'); }}
         onLoginClick={async () => await supabase.auth.signInWithOAuth({ provider: 'google' })}
       />
 

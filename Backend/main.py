@@ -1,39 +1,30 @@
-import os
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import your spending logic (which includes insights.py internally)
-import spending 
+# Import your individual logic files
+import Parser 
+import spending_routes as spending_routes
 
-app = FastAPI(title="Finance.AI Dashboard & Insights")
+app = FastAPI()
 
-# Enable CORS 
+# Enable CORS for your React frontend
 app.add_middleware(
     CORSMiddleware,
-    # Keep your specific origins for security
-    allow_origins=[
-        "http://localhost:5173",
-        "https://fin-flow-mauve.vercel.app"
-    ],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include only the spending router
-# This handles /predict and calls generate_spending_insights internally
-app.include_router(spending.router)
+# Include routes from parser.py and spending.py
+# This maps the logic without changing the original files
+app.include_router(Parser.app.router) 
+app.include_router(spending_routes.router)
 
 @app.get("/")
 def health_check():
-    return {
-        "status": "Finance.AI Dashboard Online",
-        "services": ["Spending ML", "Gemini Insights"]
-    }
+    return {"status": "Finance.AI Backend Online"}
 
 if __name__ == "__main__":
-    # Railway provides the PORT environment variable automatically
-    port = int(os.environ.get("PORT", 8000))
-    # host must be 0.0.0.0 for Railway to route traffic
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

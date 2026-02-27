@@ -92,7 +92,7 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
     formData.append("credit_score", profile.credit_score);
 
     try {
-      const response = await fetch("https://fintech-backend-gufe.onrender.com/predict", {
+      const response = await fetch("http://localhost:8000/predict", {
         method: "POST",
         body: formData, 
       });
@@ -145,6 +145,7 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
 
     return { expense, chartData, dateRange, cashFlowData };
   }, [transactions, profile.monthly_income]);
+  
 
   return (
     <div className="min-h-screen bg-fintech-primary p-6 pt-24 md:p-12 text-white relative">

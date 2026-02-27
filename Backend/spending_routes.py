@@ -1,47 +1,28 @@
-import os
-import joblib
-import pandas as pd
-import uvicorn
-from fastapi import FastAPI, Form
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Form
 from supabase import create_client
+import joblib
+import os
+import pandas as pd
 from dotenv import load_dotenv
 from datetime import datetime
 from insights import generate_spending_insights 
 
-# 1. Load environment variables
-load_dotenv()
+load_dotenv(".env")
 
-# 2. Initialize Standalone FastAPI App
-app = FastAPI(title="Finance.AI Spending ML Service")
+# Initialize Supabase
+supabase = create_client(os.getenv("VITE_SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
-# 3. Add CORS (Essential for cross-service communication)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://fin-flow-mauve.vercel.app"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Define the router clearly for main.py to see
+router = APIRouter()
 
-# 4. Initialize Supabase client
-supabase = create_client(
-    os.getenv("VITE_SUPABASE_URL"), 
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-)
-
-# 5. Global Model Loading (Avoids reloading on every request to save RAM)
+# Load the model
 try:
-    # Ensure this file is in the same directory on Render
     model = joblib.load("spending_model.pkl")
 except Exception as e:
-    print(f"CRITICAL: Model Load Error: {e}")
+    print(f"Model Load Error: {e}")
     model = None
 
-@app.post("/predict")
+@router.post("/predict")
 async def predict_spending(
     user_id: str = Form(...),
     monthly_income: float = Form(...),
@@ -58,23 +39,25 @@ async def predict_spending(
     try:
         EXCHANGE_RATE = 1.0 
         
-        # 1. Fetch Transaction History from Supabase
-        response = supabase.table("transactions")\
-            .select("*")\
-            .eq("user_id", user_id)\
-            .execute()
+        # 1. Fetch Transactions
+        response = supabase.table("transactions").select("*").eq("user_id", user_id).execute()
         
         if not response.data:
             return {"status": "error", "message": "No transaction history found."}
 
-        # 2. Time-Period Normalization
+        # --- FIXED DATE LOGIC ---
         dates = [datetime.strptime(tx['date'], '%Y-%m-%d') for tx in response.data if tx.get('date')]
-        days_diff = (max(dates) - min(dates)).days if len(dates) > 1 else 1
-        
         raw_total_expense = sum(abs(float(tx['amount'])) for tx in response.data if float(tx['amount']) < 0)
-        actual_monthly_expense = (raw_total_expense / max(days_diff, 1)) * 30.44
 
-        # 3. Generate AI Insights (Imported from insights.py)
+        if len(dates) > 1:
+            days_diff = (max(dates) - min(dates)).days
+            # Use max(days_diff, 1) to prevent division by zero
+            actual_monthly_expense = (raw_total_expense / max(days_diff, 1)) * 30.44
+        else:
+            # Fallback if only 1 transaction exists
+            actual_monthly_expense = raw_total_expense
+
+        # 2. Insights Engine
         profile_payload = {
             "monthly_income": monthly_income,
             "monthly_emi": monthly_emi_usd,
@@ -88,20 +71,18 @@ async def predict_spending(
             transactions=response.data
         )
 
-        # 4. ML Prediction Logic
+        # 3. ML Feature Prep
         edu_map = {"Bachelor's": 0, "High School": 1, "Master's": 2, "Other": 3, "PhD": 4}
         emp_map = {'Employed': 0, 'Self-employed': 1, 'Student': 2, 'Unemployed': 3}
         job_map = {'Accountant': 0, 'Doctor': 1, 'Driver': 2, 'AI/ML Engineer': 3, 'Manager': 4, 'Salesperson': 5, 'Student': 6, 'Teacher': 7, 'Unemployed': 8}
         loan_type_map = {'Business': 0, 'Car': 1, 'Education': 2, 'Home': 3, 'Personal': 0, 'None': 4}
 
-        is_loan_val = 1 if has_loan.lower() == "yes" else 0
-        
         input_row = {
             "monthly_income_inr": monthly_income * EXCHANGE_RATE,
             "education_level": edu_map.get(education, 3), 
             "employment_status": emp_map.get(employment, 3),
             "job_title": job_map.get(job_title, 8),
-            "has_loan": is_loan_val,
+            "has_loan": 1 if has_loan.lower() == "yes" else 0,
             "loan_type": loan_type_map.get(loan_type, 4),
             "loan_term_months": loan_term_months,
             "monthly_emi_inr": monthly_emi_usd * EXCHANGE_RATE,
@@ -116,13 +97,10 @@ async def predict_spending(
         ]
         input_df = pd.DataFrame([input_row])[feature_order]
 
-        if model:
-            prediction_array = model.predict(input_df)
-            predicted_amt = float(prediction_array[0])
-        else:
-            predicted_amt = monthly_income * 0.7
+        # 4. Prediction
+        predicted_amt = float(model.predict(input_df)[0]) if model else (monthly_income * 0.7)
 
-        # 5. Upsert Results to Supabase
+        # 5. Database Upsert
         result_entry = {
             "user_id": user_id,
             "monthly_income_usd": monthly_income,
@@ -148,11 +126,3 @@ async def predict_spending(
     except Exception as e:
         print(f"Prediction Error: {e}")
         return {"status": "error", "message": str(e)}
-
-@app.get("/")
-def health_check():
-    return {"status": "Spending ML Service Online", "model_loaded": model is not None}
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
