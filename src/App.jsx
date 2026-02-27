@@ -1,59 +1,89 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
 import { gsap } from 'gsap';
+import { Loader2, Shield, Layers } from 'lucide-react'; // Added icons for the internal components
 import { supabase } from './Supabase'; 
 import Navbar from './Navbar';
 import Hero from './Hero';
 import ProcessFlow from './ProcessFlow';
 import Dashboard from './Dashboard';
 
-// --- COMPONENT: ARCHITECTURE ---
-// Extracted to top level for correct React structure
+// --- COMPONENT 1: ARCHITECTURE (Defined Internally) ---
 const Architecture = () => {
+  const terminalRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!terminalRef.current) return;
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+      const rotateX = (clientY / innerHeight - 0.5) * 15;
+      const rotateY = (clientX / innerWidth - 0.5) * -15;
+
+      gsap.to(terminalRef.current, {
+        rotateX: rotateX,
+        rotateY: rotateY,
+        duration: 0.8,
+        ease: "power2.out",
+        transformPerspective: 1200
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
-    <section className="py-32 px-6 bg-fintech-primary border-t border-white/5 relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-fintech-accent/5 rounded-full blur-[120px] pointer-events-none" />
+    <section className="py-40 px-6 bg-[#FCFDFF] relative overflow-hidden">
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: `radial-gradient(#3b82f6 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
+      
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="flex flex-col md:flex-row gap-16 items-center">
-          <div className="w-full md:w-1/2">
-            <h2 className="text-5xl font-black mb-8 leading-tight text-white">
-              The Neural <br />
-              <span className="text-fintech-accent">Infrastructure.</span>
-            </h2>
-            <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-              Our architecture is built for high-velocity data ingestion and real-time inference. 
-              By decoupling the processing engine from the UI, we ensure sub-2-second latency 
-              for complex vector analysis.
-            </p>
+        <div className="flex flex-col lg:flex-row gap-16 items-center">
+          <div className="w-full lg:w-[45%] space-y-12">
             <div className="space-y-6">
-              <div className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:border-fintech-accent/30 transition-all group">
-                <h4 className="text-fintech-accent font-bold uppercase tracking-widest text-xs mb-2">Backend Engine</h4>
-                <p className="text-sm text-gray-300">FastAPI managing multi-threaded PDF parsing and regression analysis.</p>
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                <span className="text-slate-600 text-[11px] font-black uppercase tracking-[0.2em]">Compute Node: Active</span>
               </div>
-              <div className="p-6 bg-white/5 border border-white/10 rounded-2xl hover:border-fintech-accent/30 transition-all group">
-                <h4 className="text-fintech-accent font-bold uppercase tracking-widest text-xs mb-2">Vector Storage</h4>
-                <p className="text-sm text-gray-300">Supabase serving as the secure neural repository for transaction logs.</p>
+              <h2 className="text-5xl md:text-7xl font-black leading-[1.05] text-slate-900 tracking-tighter">
+                The Neural <br />
+                <span className="text-blue-600">Infrastructure.</span>
+              </h2>
+              <p className="text-slate-500 text-xl leading-relaxed font-medium border-l-4 border-blue-500/20 pl-6">
+                Institutional-grade backend logic built for sub-2-second inference and secure vector scaling.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-6 bg-white border border-slate-200 rounded-[2rem] shadow-sm group">
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>
+                  <div><h4 className="font-bold text-slate-900">Backend Engine</h4><p className="text-sm text-slate-500">FastAPI & ML Inference.</p></div>
+                </div>
+              </div>
+              <div className="p-6 bg-white border border-slate-200 rounded-[2rem] shadow-sm group">
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-900"><Shield /></div>
+                  <div><h4 className="font-bold text-slate-900">Vector Storage</h4><p className="text-sm text-slate-500">Supabase Repository.</p></div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="w-full md:w-1/2 bg-fintech-card p-1 border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden group">
-            <div className="bg-fintech-primary/50 p-8 rounded-[2.8rem] border border-white/5">
-               <div className="flex justify-between items-center mb-12">
-                 <div className="flex gap-2">
-                   <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
-                   <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
-                   <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+          <div className="w-full lg:w-[55%] perspective-2000 py-10">
+            <div ref={terminalRef} className="bg-slate-950 p-1 rounded-[4rem] shadow-2xl overflow-hidden" style={{ transformStyle: 'preserve-3d' }}>
+              <div className="bg-slate-900/90 backdrop-blur-2xl p-10 rounded-[3.8rem] border border-white/10 font-mono text-sm space-y-4">
+                 <div className="flex gap-2 mb-8">
+                   <div className="w-3 h-3 rounded-full bg-red-500" />
+                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                   <div className="w-3 h-3 rounded-full bg-emerald-500" />
                  </div>
-                 <span className="text-[10px] text-gray-500 font-mono">FINFLOW_ENGINE_STDOUT</span>
-               </div>
-               <div className="font-mono text-sm space-y-2">
                  <p className="text-blue-400"># Initializing Ingestion Pipeline...</p>
-                 <p className="text-gray-500">{"[INFO] Loading pre-trained joblib model..."}</p>
-                 <p className="text-emerald-400">{"[SUCCESS] 94.2% Probability Threshold Met"}</p>
-                 <p className="text-gray-500">{"[INFO] Normalizing 16.6 months of data..."}</p>
-                 <p className="text-purple-400">{"[AI] Generating Grok Insight via Gemini..."}</p>
-                 <div className="w-1 h-5 bg-fintech-accent animate-pulse inline-block" />
-               </div>
+                 <p className="text-emerald-400">{"[SUCCESS] 94.2% Probability Met"}</p>
+                 <p className="text-purple-400 font-bold">{"[AI] Grok Insight Generated."}</p>
+                 <div className="w-3 h-6 bg-blue-500 animate-pulse rounded-sm" />
+              </div>
             </div>
           </div>
         </div>
@@ -62,29 +92,28 @@ const Architecture = () => {
   );
 };
 
-// --- COMPONENT: ANIMATED BACKGROUND ---
+// --- COMPONENT 2: ANIMATED BACKGROUND ---
 const AnimatedBackground = () => {
   const glow1Ref = useRef(null);
   const glow2Ref = useRef(null);
 
   useEffect(() => {
-    [glow1Ref, glow2Ref].forEach(ref => {
-      gsap.to(ref.current, {
-        x: "random(-100, 100)",
-        y: "random(-100, 100)",
-        duration: "random(10, 20)",
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
+    const ctx = gsap.context(() => {
+      [glow1Ref, glow2Ref].forEach(ref => {
+        gsap.to(ref.current, {
+          x: "random(-100, 100)", y: "random(-100, 100)",
+          duration: "random(15, 25)", repeat: -1, yoyo: true, ease: "sine.inOut"
+        });
       });
     });
+    return () => ctx.revert();
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      <div className="absolute inset-0 moving-grid opacity-30" />
-      <div ref={glow1Ref} className="neural-bg-glow w-[600px] h-[600px] -top-20 -left-20" />
-      <div ref={glow2Ref} className="neural-bg-glow w-[800px] h-[800px] -bottom-40 -right-40 opacity-50" />
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[#FAFBFF]">
+      <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: `radial-gradient(#3b82f6 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+      <div ref={glow1Ref} className="absolute w-[600px] h-[600px] rounded-full bg-blue-100/40 blur-[120px] -top-20 -left-20" />
+      <div ref={glow2Ref} className="absolute w-[800px] h-[800px] rounded-full bg-indigo-50/50 blur-[140px] -bottom-40 -right-40" />
     </div>
   );
 };
@@ -103,7 +132,6 @@ function App() {
     try {
       const { data: txData } = await supabase.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false });
       const { data: mlData } = await supabase.from('spending_results').select('*').eq('user_id', userId).order('calculation_date', { ascending: false }).limit(1).maybeSingle();
-  
       setTransactionData(txData || []);
       if (mlData) {
         setPredictionData({
@@ -112,10 +140,7 @@ function App() {
           suggestion: mlData.suggestion
         });
       }
-  
-      // FIX: If there is a user, ALWAYS show dashboard view so they can see the "Add Statement" button
       setView('dashboard'); 
-      
     } catch (error) {
       console.error("Supabase Error:", error.message);
     } finally {
@@ -140,7 +165,7 @@ function App() {
   }, [fetchLiveFinanceData]);
 
   return (
-    <div className="min-h-screen bg-fintech-primary text-white font-sans selection:bg-fintech-accent selection:text-fintech-primary">
+    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700 overflow-x-hidden">
       <Navbar 
         user={user} 
         onSignOut={async () => await supabase.auth.signOut()}
@@ -149,25 +174,27 @@ function App() {
         onLoginClick={async () => await supabase.auth.signInWithOAuth({ provider: 'google' })}
       />
 
-      {/* Place the background here */}
       {view === 'landing' && <AnimatedBackground />}
 
-      <div className="pt-24 relative z-10"> 
+      <div className="relative z-10"> 
         {view === 'dashboard' ? (
-          <Dashboard transactions={transactionData} predictionData={predictionData} user={user} onUploadSuccess={() => fetchLiveFinanceData(user?.id)} />
+          <div className="pt-24">
+            <Dashboard transactions={transactionData} predictionData={predictionData} user={user} onUploadSuccess={() => fetchLiveFinanceData(user?.id)} />
+          </div>
         ) : (
           <main>
             <Hero />
-            
-          
-
             <ProcessFlow />
             <Architecture />
-            
-            <footer className="py-12 text-center border-t border-white/5 opacity-40">
-               <p className="text-[10px] uppercase tracking-[0.3em] font-bold">
-                 &copy; 2026 FinFlow Intelligence • Secure Neural Environment
-               </p>
+            <footer className="py-24 text-center border-t border-slate-100 bg-white">
+               <div className="max-w-7xl mx-auto flex flex-col items-center">
+                  <div className="w-12 h-12 bg-blue-600 rounded-2xl mb-8 flex items-center justify-center shadow-lg shadow-blue-100">
+                    <Layers className="text-white w-6 h-6" />
+                  </div>
+                  <p className="text-[11px] uppercase tracking-[0.4em] font-black text-slate-400">
+                    &copy; 2026 FinFlow Intelligence • Secure Neural Environment
+                  </p>
+               </div>
             </footer>
           </main>
         )}

@@ -1,93 +1,138 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { FileText, BrainCircuit, TrendingUp } from 'lucide-react';
+import { FileText, BrainCircuit, TrendingUp, ArrowRight, Shield } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const ProcessFlow = () => {
+  const containerRef = useRef(null);
+  const horizontalRef = useRef(null);
+
   useEffect(() => {
-    // GSAP animation for staggered entry from the left
-    gsap.utils.toArray('.process-step').forEach((step) => {
-      gsap.fromTo(step, 
-        { opacity: 0, x: -40 },
-        {
-          scrollTrigger: {
-            trigger: step,
-            start: "top 85%",
-            toggleActions: "play none none reverse",
-          },
-          opacity: 1, x: 0, duration: 1, ease: "power3.out"
+    // 3D Horizontal Staggered Entry
+    const cards = gsap.utils.toArray('.process-card-horizontal');
+    
+    gsap.fromTo(cards, 
+      { 
+        opacity: 0, 
+        x: 100, 
+        rotateY: 45, 
+        scale: 0.9 
+      },
+      {
+        opacity: 1,
+        x: 0,
+        rotateY: 0,
+        scale: 1,
+        stagger: 0.3,
+        duration: 1.2,
+        ease: "power4.out",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 70%",
+          toggleActions: "play none none reverse",
         }
-      );
+      }
+    );
+
+    // Subtle floating loop for the 3D cards
+    gsap.to(".process-card-horizontal", {
+      y: -10,
+      duration: 2,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut",
+      stagger: 0.2
     });
   }, []);
 
   return (
-    <section id="process" className="py-32 px-6 md:px-24 bg-fintech-primary relative overflow-hidden">
-      {/* Background Neural Trace - Shifted left to match the new alignment */}
-      <div className="absolute top-0 left-12 md:left-32 w-px h-full bg-gradient-to-b from-fintech-accent/0 via-fintech-accent/20 to-transparent hidden md:block" />
+    <section ref={containerRef} id="process" className="py-32 px-6 md:px-24 bg-[#F8FAFC] overflow-hidden">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        
+        {/* LEFT SIDE: About Us / Narrative */}
+        <div className="space-y-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-lg">
+            <Shield className="w-4 h-4 text-blue-600" />
+            <span className="text-blue-700 text-[10px] font-bold uppercase tracking-widest">Our Methodology</span>
+          </div>
+          
+          <h2 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight">
+            Engineered for <br />
+            <span className="text-blue-600 text-3xl md:text-5xl">Absolute Precision.</span>
+          </h2>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-24">
-          <h2 className="text-4xl md:text-6xl font-black mb-4">The Pipeline</h2>
-          <p className="text-fintech-accent font-mono uppercase tracking-[0.4em] text-sm">Automated Financial Ingestion</p>
+          <p className="text-lg text-slate-500 max-w-md leading-relaxed">
+            At FinFlow.ai, we bridge the gap between raw UPI data and institutional intelligence. 
+            Our pipeline is a closed-loop system designed to ingest, process, and predict 
+            financial trajectories in real-time.
+          </p>
+
+          <div className="space-y-4 pt-4">
+            <div className="flex items-start gap-4">
+              <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-1">
+                <div className="w-2 h-2 rounded-full bg-blue-600" />
+              </div>
+              <p className="text-slate-700 font-semibold italic text-sm">"Turning transaction history into a strategic asset."</p>
+            </div>
+          </div>
+
+          <button className="flex items-center gap-2 text-blue-600 font-bold hover:gap-4 transition-all">
+            Deep Dive into Documentation <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
 
-        <div className="flex flex-col gap-24">
-          
-          {/* Step 1: Neural Extraction */}
-          <div className="process-step grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
-            <div className="flex items-center gap-8 relative z-10">
-              <div className="w-20 h-20 shrink-0 rounded-[2rem] bg-fintech-card border border-fintech-accent/20 flex items-center justify-center shadow-[0_0_40px_rgba(56,189,248,0.1)]">
-                <FileText className="text-fintech-accent w-10 h-10" />
-              </div>
-              <h3 className="text-3xl font-bold text-white">01. Neural Extraction</h3>
-            </div>
-            <div className="md:border-l md:border-white/10 md:pl-12">
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Binary extraction of UPI transaction logs from raw PDF statements using `pdfplumber`. 
-                We normalize fragmented bank data into a structured vector feed.
-              </p>
-            </div>
+        {/* RIGHT SIDE: 3D Horizontal Card Stack */}
+        <div className="relative h-[500px] flex items-center perspective-2000">
+          <div ref={horizontalRef} className="flex flex-col gap-6 w-full">
+            
+            <Horizontal3DCard 
+              index="01"
+              icon={<FileText className="text-blue-600" />}
+              title="Extraction"
+              desc="PDFPlumber binary parsing for UPI logs."
+            />
+
+            <Horizontal3DCard 
+              index="02"
+              icon={<TrendingUp className="text-blue-600" />}
+              title="Forecasting"
+              desc="Joblib-backed ML regression models."
+            />
+
+            <Horizontal3DCard 
+              index="03"
+              icon={<BrainCircuit className="text-blue-600" />}
+              title="Grok Logic"
+              desc="Contextual AI spending habit analysis."
+            />
+
           </div>
-
-          {/* Step 2: ML Forecasting */}
-          <div className="process-step grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
-            <div className="flex items-center gap-8 relative z-10">
-              <div className="w-20 h-20 shrink-0 rounded-[2rem] bg-fintech-card border border-fintech-success/20 flex items-center justify-center shadow-[0_0_40px_rgba(52,211,153,0.1)]">
-                <TrendingUp className="text-fintech-success w-10 h-10" />
-              </div>
-              <h3 className="text-3xl font-bold text-white">02. ML Forecasting</h3>
-            </div>
-            <div className="md:border-l md:border-white/10 md:pl-12">
-              <p className="text-gray-400 text-lg leading-relaxed">
-                Multi-feature regression analysis using `joblib` models. We process 10 neural 
-                parameters to predict future spending patterns with high precision.
-              </p>
-            </div>
-          </div>
-
-          {/* Step 3: Grok AI Engine */}
-          <div className="process-step grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
-            <div className="flex items-center gap-8 relative z-10">
-              <div className="w-20 h-20 shrink-0 rounded-[2rem] bg-fintech-card border border-purple-500/20 flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.2)]">
-                <BrainCircuit className="text-purple-400 w-10 h-10" />
-              </div>
-              <h3 className="text-3xl font-bold text-white">03. Grok AI Engine</h3>
-            </div>
-            <div className="md:border-l md:border-white/10 md:pl-12">
-              <p className="text-gray-400 text-lg leading-relaxed">
-              Smart contextual analysis that turns your spending habits into actionable financial advice.”
-
-Personalized insights and witty money advice, shaped by how you actually spend.
-              </p>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>
+  );
+};
+
+/* Horizontal 3D Card Sub-component */
+const Horizontal3DCard = ({ index, icon, title, desc }) => {
+  return (
+    <div className="process-card-horizontal group bg-white border border-slate-200 p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(59,130,246,0.1)] transition-all duration-500 flex items-center gap-6 cursor-default">
+      <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-500">
+        {icon}
+      </div>
+      
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="font-bold text-slate-900 text-lg">{title}</h4>
+          <span className="text-[10px] font-mono font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded">{index}</span>
+        </div>
+        <p className="text-slate-500 text-sm leading-snug">{desc}</p>
+      </div>
+
+      <div className="w-1 h-10 bg-slate-100 rounded-full group-hover:bg-blue-400 transition-colors" />
+    </div>
   );
 };
 

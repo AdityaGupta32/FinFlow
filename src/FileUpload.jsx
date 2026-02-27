@@ -45,12 +45,12 @@ const FileUpload = ({ user_id, onUploadSuccess }) => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-fintech-card border border-white/5 rounded-[2.5rem] p-12 text-center shadow-2xl">
+    <div className="max-w-md mx-auto bg-[#FFFFF0] border text-slate-800 rounded-[2.5rem] p-6 text-center shadow-2xl">
       <h2 className="text-4xl font-bold mb-4 text-white">Ingestion Portal</h2>
-      <p className="text-gray-400 mb-12">Drop your bank statements (PDF/CSV) to begin the analysis</p>
+      <p className="text-slate-500 mb-12">Drop your bank statements (PDF/CSV) to begin the analysis</p>
 
       {/* The Sky Blue themed dropzone */}
-      <div className="relative border-2 border-dashed border-white/10 rounded-3xl p-16 group hover:border-fintech-accent/50 transition-colors cursor-pointer bg-white/[0.02]">
+      <div className="relative border-2 border-dashed border-white/10 rounded-3xl p-8 group hover:border-fintech-accent/50 transition-colors cursor-pointer bg-white/50">
         <input 
           type="file" 
           accept=".pdf,.csv"
@@ -62,7 +62,7 @@ const FileUpload = ({ user_id, onUploadSuccess }) => {
         />
         <div className="flex flex-col items-center gap-6">
           <div className="p-5 bg-fintech-accent/10 rounded-2xl text-fintech-accent group-hover:scale-110 transition-transform">
-            {file ? <FileText size={48}/> : <UploadCloud size={48} />}
+            {file ? <FileText size={32}/> : <UploadCloud size={32} />}
           </div>
           <div>
             <p className="text-xl font-semibold text-white">{file ? file.name : "Choose a file"}</p>

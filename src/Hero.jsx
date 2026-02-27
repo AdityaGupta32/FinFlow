@@ -1,95 +1,138 @@
 import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { ShieldCheck, BrainCircuit, Activity, Zap } from 'lucide-react';
+import { ShieldCheck, BrainCircuit, Activity, Zap, CreditCard, ArrowRight, Fingerprint, PieChart, BarChart3 } from 'lucide-react';
 
 const Hero = () => {
+  const containerRef = useRef(null);
   const textRef = useRef(null);
   const visualRef = useRef(null);
 
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-    // Entry animation sequence
-    tl.fromTo(textRef.current, 
-      { opacity: 0, y: 40 }, 
-      { opacity: 1, y: 0, duration: 1.2, delay: 0.3 }
+    tl.fromTo(textRef.current.children, 
+      { opacity: 0, x: -40 }, 
+      { opacity: 1, x: 0, duration: 1, stagger: 0.15, delay: 0.4 }
     )
     .fromTo(visualRef.current,
-      { opacity: 0, scale: 0.9 },
-      { opacity: 1, scale: 1, duration: 1.5 },
-      "-=0.8"
+      { opacity: 0, scale: 0.85, rotateY: -10 },
+      { opacity: 1, scale: 1, rotateY: 0, duration: 1.4 },
+      "-=1"
     );
+
+    // Subtle 3D Floating Loop
+    gsap.to(".floating-element", {
+      y: 12,
+      duration: 4,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut",
+      stagger: { amount: 1.5, from: "center" }
+    });
   }, []);
 
   return (
-    <section className="min-h-screen flex flex-col justify-center items-center text-center px-4 relative overflow-hidden">
-      {/* Dynamic Background Neural Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[800px] md:h-[800px] bg-fintech-accent/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+    <section ref={containerRef} className="min-h-screen flex items-center justify-center px-6 md:px-20 relative overflow-hidden bg-[#F9FAFB]">
+      {/* Decorative Gradient Glow */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-[120px] pointer-events-none" />
       
-      <div ref={textRef} className="z-10 max-w-6xl w-full pt-20">
-        {/* Feature Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full border border-fintech-accent/20 bg-fintech-accent/5 backdrop-blur-xl transition-all hover:border-fintech-accent/40">
-          <ShieldCheck className="w-4 h-4 text-fintech-accent" />
-          <span className="text-fintech-accent text-xs font-bold uppercase tracking-[0.2em]">
-            Secure Vector Analysis v2.0
-          </span>
+      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center z-10">
+        
+        {/* LEFT SIDE: Copy & Conversion */}
+        <div ref={textRef} className="text-left space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-slate-200 bg-white shadow-sm">
+            <Activity className="w-3.5 h-3.5 text-blue-500" />
+            <span className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+              System Live: 99.9% Uptime
+            </span>
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+            Flow Right . <br />
+            <span className="text-blue-600">Future Bright .</span>
+          </h1>
+
+          <p className="text-lg text-slate-500 max-w-md leading-relaxed">
+            A specialized ledger for high-net-worth tracking. Seamlessly categorize UPI flows and forecast future liquidity with our proprietary ML engine.
+          </p>
+
+          <div className="flex gap-4 pt-4">
+            <button className="px-8 py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:shadow-xl hover:bg-slate-800 transition-all flex items-center gap-2">
+              Start Analysis <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Main Heading */}
-        <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[1.1]">
-          Financial Intelligence <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-fintech-accent via-blue-400 to-purple-500">
-            Beyond Numbers.
-          </span>
-        </h1>
+        {/* RIGHT SIDE: Compact 3D Visual with Analytics */}
+        <div ref={visualRef} className="relative h-[600px] flex items-center justify-center perspective-1000">
+          
+          {/* Scaled-Down Pro Device */}
+          <div className="floating-element relative w-[240px] h-[480px] bg-white rounded-[2.5rem] border-[10px] border-slate-900 shadow-2xl overflow-hidden z-20">
+             {/* Screen Content: Advanced Analytics UI */}
+             <div className="p-5 pt-10 space-y-5">
+                <div className="flex justify-between items-center mb-2">
+                    <div className="h-2 w-12 bg-slate-200 rounded-full" />
+                    <Fingerprint className="w-4 h-4 text-slate-300" />
+                </div>
 
-        {/* Subtext */}
-        <p className="text-lg md:text-xl text-gray-400 mb-16 max-w-2xl mx-auto leading-relaxed font-medium">
-        Turn your UPI transactions into clear financial insights.”
-        </p>
+                {/* Circular Liquidity Gauge */}
+                <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
+                    <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-50" />
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="364" strokeDashoffset="100" className="text-blue-500" />
+                    </svg>
+                    <div className="absolute text-center">
+                        <span className="text-xs text-slate-400 block uppercase font-bold tracking-tighter">Liquidity</span>
+                        <span className="text-lg font-black text-slate-800">82%</span>
+                    </div>
+                </div>
 
-        {/* --- PROJECT CONTENT NODES --- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto mb-10">
-          <FeatureNode 
-            icon={<BrainCircuit className="text-fintech-accent" />}
-            title="Predictive Forecasting"
-            desc="ML-driven regression models analyze historical burn rates to forecast next-month liquidity with high precision."
-          />
-          <FeatureNode 
-            icon={<Zap className="text-purple-400" />}
-            title="Grok AI Insights"
-            desc="Contextual financial advice generated by ML logic based on your unique categorized spending habits."
-          />
-          <FeatureNode 
-            icon={<Activity className="text-emerald-400" />}
-            title="Risk Detection"
-            desc="Anomaly detection algorithms flag unusual high-value transactions or suspicious patterns using Z-score analysis."
-          />
-        </div>
-      </div>
+                {/* Spending Heatmap Bars */}
+                <div className="space-y-3 pt-2">
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                        <div className="h-full bg-blue-500 w-1/2" />
+                        <div className="h-full bg-indigo-400 w-1/4" />
+                        <div className="h-full bg-slate-300 w-1/4" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="h-10 bg-slate-50 rounded-lg border border-slate-100 flex items-end p-1 justify-center gap-0.5">
+                                <div className="w-1.5 h-1/2 bg-blue-200 rounded-t-sm" />
+                                <div className="w-1.5 h-3/4 bg-blue-400 rounded-t-sm" />
+                                <div className="w-1.5 h-1/3 bg-blue-100 rounded-t-sm" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+             </div>
+          </div>
 
-      {/* Decorative Neural Grid Overlay */}
-      <div ref={visualRef} className="absolute bottom-0 w-full h-1/2 opacity-20 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-t from-fintech-primary via-transparent to-transparent z-10" />
-        <div className="w-full h-full border-t border-white/5 grid grid-cols-12 gap-4 px-4">
-          {[...Array(12)].map((_, i) => (
-            <div key={i} className="h-full border-x border-white/5" />
-          ))}
+          {/* External Analytics Node 1: Market Pulse */}
+          <div className="floating-element absolute top-10 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/50 z-30 w-40 flex items-center gap-3">
+             <div className="p-2 bg-emerald-50 rounded-lg"><PieChart className="w-4 h-4 text-emerald-600" /></div>
+             <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase">Growth</div>
+                <div className="text-sm font-black text-slate-800">+4.2%</div>
+             </div>
+          </div>
+
+          {/* External Analytics Node 2: Burn Rate Chart */}
+          <div className="floating-element absolute bottom-20 left-4 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 z-30 w-48">
+             <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-black text-slate-900 uppercase">Burn Rate</span>
+                <BarChart3 className="w-4 h-4 text-blue-500" />
+             </div>
+             <div className="flex items-end gap-1 h-12">
+                {[40, 70, 45, 90, 65, 80].map((h, i) => (
+                    <div key={i} className="flex-1 bg-blue-50 rounded-t-sm hover:bg-blue-500 transition-colors" style={{ height: `${h}%` }} />
+                ))}
+             </div>
+          </div>
+
         </div>
       </div>
     </section>
   );
 };
-
-/* Reusable Feature Component */
-const FeatureNode = ({ icon, title, desc }) => (
-  <div className="bg-white/5 border border-white/5 p-6 rounded-3xl backdrop-blur-sm hover:border-white/10 transition-all group">
-    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-      {icon}
-    </div>
-    <h3 className="text-white font-bold text-xl mb-3">{title}</h3>
-    <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-  </div>
-);
 
 export default Hero;
