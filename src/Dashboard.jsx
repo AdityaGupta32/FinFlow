@@ -14,6 +14,9 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444'
 const Dashboard = ({ transactions = [], predictionData = null, user = null, onUploadSuccess }) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false); 
+  const [offers, setOffers] = useState([]);
+  const [isScraping, setIsScraping] = useState(false);
+  const [targetBank, setTargetBank] = useState("HDFC Regalia");
   
   const [profile, setProfile] = useState({
     job_title: '',
@@ -53,6 +56,23 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
     };
     fetchUserData();
   }, [user]);
+
+  const handleScanOffers = async () => {
+    setIsScraping(true);
+    try {
+      const response = await fetch("http://localhost:8000/scrape-offers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card_name: targetBank }),
+      });
+      const data = await response.json();
+      setOffers(data.offers || []);
+    } catch (err) {
+      console.error("Scraper Error:", err);
+    } finally {
+      setIsScraping(false);
+    }
+  };
 
   const addLoan = () => setLoans([...loans, { type: 'Personal', emi: 0, interest: 0, duration: 0 }]);
   const removeLoan = (index) => loans.length > 1 && setLoans(loans.filter((_, i) => i !== index));
@@ -98,11 +118,7 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
     if (!Array.isArray(transactions) || transactions.length === 0) 
         return { expense: 0, chartData: [], dateRange: "", cashFlowData: [] };
 
-    const sortedDates = transactions
-      .map(t => new Date(t.date))
-      .filter(d => !isNaN(d))
-      .sort((a, b) => a - b);
-
+    const sortedDates = transactions.map(t => new Date(t.date)).filter(d => !isNaN(d)).sort((a, b) => a - b);
     const dateRange = sortedDates.length > 0 
       ? `${sortedDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - ${sortedDates[sortedDates.length - 1].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
       : "";
@@ -119,8 +135,6 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
     const daysDiff = (Math.max(...sortedDates) - Math.min(...sortedDates)) / (1000 * 60 * 60 * 24);
     const numMonths = Math.max(1, Math.round(daysDiff / 30.44 * 10) / 10);
     const normalizedExpense = expense / numMonths;
-    
-    // LOGIC: Money Transfer is the overhead beyond the normalized monthly spend
     const moneyTransferAmount = Math.max(0, expense - normalizedExpense);
 
     const cashFlowData = [
@@ -130,9 +144,7 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
       { name: 'Savings', amount: Math.max(0, parseFloat(profile.monthly_income) - normalizedExpense), fill: '#6366f1' }
     ];
 
-    const chartData = Object.keys(categoryMap).map(key => ({
-      name: key, value: categoryMap[key]
-    })).sort((a, b) => b.value - a.value);
+    const chartData = Object.keys(categoryMap).map(key => ({ name: key, value: categoryMap[key] })).sort((a, b) => b.value - a.value);
 
     return { expense, chartData, dateRange, cashFlowData };
   }, [transactions, profile.monthly_income]);
@@ -142,7 +154,7 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
       
       {isUploadOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="relative z-[210] w-full max-w-md bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl overflow-hidden">
+          <div className="relative z-[210] w-full max-w-4xl bg-white border border-slate-200 rounded-[2.5rem] shadow-2xl overflow-hidden">
             <button onClick={() => setIsUploadOpen(false)} className="absolute top-8 right-8 p-2 text-slate-400 hover:text-slate-900 z-30 transition-colors"><X size={28} /></button>
             <div className="p-8">
               <FileUpload user_id={user?.id} onUploadSuccess={() => { onUploadSuccess(); setIsUploadOpen(false); }} />
@@ -151,7 +163,6 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
         </div>
       )}
 
-      {/* HEADER SECTION */}
       <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-200 pb-10">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
@@ -169,13 +180,11 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
         </button>
       </header>
 
-      {/* TOP KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <SummaryCard title="Total Expenditure" amount={summary.expense} icon={ArrowDownCircle} colorClass="text-slate-900" bgClass="bg-[#FFFFF0]" iconColor="text-rose-500" isBalance />
         <SummaryCard title="Risk Indicators" amount={predictionData?.alerts?.length || 0} icon={ShieldAlert} colorClass="text-amber-600" bgClass="bg-[#FFFFF0]" iconColor="text-amber-500" noCurrency />
       </div>
 
-      {/* CASH FLOW CHART */}
       <div className="bg-white rounded-[2.5rem] border border-slate-200 p-10 shadow-sm h-[450px] mb-12">
         <h3 className="text-xl font-bold mb-8 flex items-center gap-3 text-slate-900">
           <TrendingUp className="text-emerald-500" size={24} /> Normalized Cash Flow Architecture
@@ -193,7 +202,6 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
 
       <ScrollReveal>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
-          {/* PROFILE CARD */}
           <div className="lg:col-span-1 bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm space-y-8">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2"><Briefcase size={16} /> Demographics</h3>
             <div className="space-y-6">
@@ -204,7 +212,6 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
             </div>
           </div>
 
-          {/* LIABILITY ENGINE */}
           <div className="lg:col-span-3 bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm h-full overflow-hidden">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 bg-[#FFFFF0]"><Landmark size={16} /> Liability Ledger</h3>
@@ -227,68 +234,108 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
         </div>
       </ScrollReveal>
 
-      {/* REDUCED SIZE AI STRATEGY ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
-    {/* Burn Forecast - Slim Static Credit Card */}
-    <div className="relative overflow-hidden bg-[#1e2235] p-5 rounded-[1.8rem] shadow-xl group h-[180px] flex flex-col justify-between border border-slate-700/50">
-      <div className="absolute top-0 right-0 p-4 opacity-10">
-        <BrainCircuit size={80} />
-      </div>
-      
-      <div className="flex justify-between items-start relative z-10">
-        <div>
-          <h3 className="text-[9px] font-black uppercase tracking-[0.15em] text-indigo-300 mb-2">Neural Burn Forecast</h3>
-          <div className="w-9 h-7 bg-gradient-to-br from-amber-200 to-amber-500 rounded-md shadow-inner" />
-        </div>
-        <Sparkles size={16} className="text-indigo-400" />
-      </div>
-
-      <div className="relative z-10">
-        <p className="text-2xl font-bold text-white tracking-widest mb-2 font-mono">
-          ₹{predictionData?.prediction || "0.00"}
-        </p>
-        
-        <div className="flex justify-between items-end border-t border-white/10 pt-2">
-          <div>
-            <p className="text-[7px] text-slate-400 uppercase font-bold">Account Index</p>
-            <p className="text-[9px] text-white font-mono tracking-tighter">**** **** **** 8842</p>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12 items-stretch">
+        <div className="lg:col-span-1 space-y-6 flex flex-col">
+          <div className="relative overflow-hidden bg-[#1e2235] p-5 rounded-[1.8rem] shadow-xl group h-[180px] flex flex-col justify-between border border-slate-700/50 shrink-0">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <BrainCircuit size={80} />
+            </div>
+            <div className="flex justify-between items-start relative z-10">
+              <div>
+                <h3 className="text-[9px] font-black uppercase tracking-[0.15em] text-indigo-300 mb-2">Neural Burn Forecast</h3>
+                <div className="w-9 h-7 bg-gradient-to-br from-amber-200 to-amber-500 rounded-md shadow-inner" />
+              </div>
+              <Sparkles size={16} className="text-indigo-400" />
+            </div>
+            <div className="relative z-10">
+              <p className="text-2xl font-bold text-white tracking-widest mb-2 font-mono">
+                ₹{predictionData?.prediction || "0.00"}
+              </p>
+              <div className="flex justify-between items-end border-t border-white/10 pt-2">
+                <div>
+                  <p className="text-[7px] text-slate-400 uppercase font-bold">Account Index</p>
+                  <p className="text-[9px] text-white font-mono tracking-tighter">**** **** **** 8842</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[7px] text-slate-400 uppercase font-bold">Confidence</p>
+                  <p className="text-[9px] text-emerald-400 font-bold">94.2% MATCH</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-[7px] text-slate-400 uppercase font-bold">Confidence</p>
-            <p className="text-[9px] text-emerald-400 font-bold">94.2% MATCH</p>
+
+          <div className="bg-white p-5 rounded-[1.8rem] border border-slate-200 shadow-sm flex flex-col flex-1 min-h-[280px]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <Sparkles size={14} className="text-indigo-500" /> Rewards Scanner
+              </h3>
+              <span className="text-[8px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">LIVE</span>
+            </div>
+            <div className="mb-4 flex gap-2">
+               <input 
+                type="text" 
+                value={targetBank}
+                onChange={(e) => setTargetBank(e.target.value)}
+                placeholder="Bank Name"
+                className="flex-1 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-[10px] text-slate-900 focus:outline-none focus:border-indigo-400 transition-all"
+              />
+              <button 
+                onClick={handleScanOffers}
+                disabled={isScraping}
+                className="bg-[#0f172a] hover:bg-indigo-600 text-white p-2 rounded-lg transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isScraping ? <Loader2 size={12} className="animate-spin" /> : <ArrowUpRight size={12} />}
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+              {offers.length > 0 ? (
+                offers.map((offer, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-100 transition-all group">
+                    <p className="text-[10px] font-bold text-slate-800 leading-tight mb-1">{offer.merchant}</p>
+                    <p className="text-[9px] text-indigo-600 font-medium leading-tight">{offer.benefit}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-6">
+                  <BrainCircuit size={20} className="mb-2" />
+                  <p className="text-[9px] font-medium leading-relaxed">Enter bank name <br/> to pull live deals</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* REFINED STATIC HEIGHT OPTIMIZATION CARD */}
+        <div className="lg:col-span-3 bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col h-[484px]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-50 rounded-xl">
+                <TrendingUp size={18} className="text-indigo-600" />
+              </div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Optimization Architecture</h3>
+            </div>
+            <span className="text-[8px] font-bold text-indigo-400 border border-indigo-100 px-2 py-0.5 rounded-md uppercase tracking-tighter">Static Node</span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto custom-scrollbar pr-3 mb-4">
+            <p className="text-sm text-slate-600 italic leading-relaxed font-serif">
+              "{predictionData?.suggestion || "Synthesizing transaction logs to define liquidity thresholds..."}"
+            </p>
+          </div>
+
+          <div className="mt-auto flex justify-end">
+            <button 
+              onClick={syncLiabilityData} 
+              disabled={isSyncing} 
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#0f172a] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+            >
+               {isSyncing ? <Loader2 className="animate-spin w-3 h-3" /> : <Save size={12} />} 
+               Sync Global Parameters
+            </button>
           </div>
         </div>
       </div>
-    </div>
 
-          {/* AI Optimization - Slimmer Padding */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-[1.8rem] border border-slate-200 flex flex-col shadow-sm height-[180px]">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="p-1.5 bg-indigo-50 rounded-lg">
-          <TrendingUp size={14} className="text-indigo-600" />
-        </div>
-        <h3 className="text-[9px] font-black uppercase tracking-widest text-slate-400">Optimization Strategy</h3>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-        <p className="text-sm text-slate-600 italic leading-relaxed font-serif height-[200px]">
-          "{predictionData?.suggestion || "Analyzing transaction density to refine your liquidity architecture..."}"
-        </p>
-      </div>
-
-      <div className="flex justify-end mt-2">
-        <button 
-          onClick={syncLiabilityData} 
-          disabled={isSyncing} 
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#0f172a] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg active:scale-95 disabled:opacity-50"
-        >
-           {isSyncing ? <CheckCircle className="animate-spin w-3 h-3" /> : <Save size={12} />} Sync Parameters
-        </button>
-      </div>
-    </div>
-</div>
-
-      {/* LOGS & PIE CHART */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-slate-200 p-10 h-[550px] flex flex-col shadow-sm">
           <h3 className="text-xl font-bold mb-8 text-slate-900">Neural Transaction Log</h3>
@@ -327,17 +374,30 @@ const Dashboard = ({ transactions = [], predictionData = null, user = null, onUp
           </div>
         </div>
       </div>
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+      `}</style>
     </div>
   );
 }
 
+// STABLE SUMMARY CARD COMPONENT
 const SummaryCard = ({ title, amount, icon: Icon, colorClass, bgClass, iconColor, noCurrency, isBalance }) => (
-  <div className={`${bgClass} p-10 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col justify-center transition-all hover:shadow-md h-full`}>
+  <div className={`${bgClass} p-10 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col justify-center transition-all hover:shadow-md h-full group`}>
     <div className="flex items-center justify-between mb-6">
       <h3 className="text-slate-500 font-bold text-xs uppercase tracking-widest">{title}</h3>
-      <div className="p-3 bg-slate-50 rounded-2xl shadow-inner transition-transform group-hover:scale-110"><Icon className={`w-6 h-6 ${iconColor}`} /></div>
+      <div className="p-3 bg-slate-50 rounded-2xl shadow-inner transition-transform group-hover:scale-110">
+        {/* Added type check for Icon to ensure it is a valid component */}
+        {typeof Icon === 'function' ? <Icon className={`w-6 h-6 ${iconColor}`} /> : <div className="w-6 h-6 bg-slate-200 rounded-full" />}
+      </div>
     </div>
-    <p className={`text-4xl font-extrabold tracking-tighter ${colorClass}`}>{!noCurrency && '₹'}{amount.toLocaleString()}</p>
+    <p className={`text-4xl font-extrabold tracking-tighter ${colorClass}`}>
+      {!noCurrency && '₹'}{amount?.toLocaleString() || '0'}
+    </p>
     {isBalance && <p className="text-[10px] text-emerald-600 font-bold mt-4 flex items-center gap-1.5"><ArrowUpRight size={12}/> 15.43% than last month</p>}
   </div>
 );
